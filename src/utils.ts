@@ -25,4 +25,11 @@ function nextDay(time: number) {
   return nextDay.getTime();
 }
 
-export { formateDate, getOneYearbeforeDay, nextDay };
+// get Day of the week
+function getDayOfWeek(time: number) {
+  let date = new Date(time);
+  let day = date.getDay();
+  return day;
+}
+
+export { formateDate, getOneYearbeforeDay, nextDay, getDayOfWeek };

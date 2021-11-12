@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { onMounted } from "vue";
-import { formateDate, getOneYearbeforeDay, nextDay } from "./utils";
+import {
+  formateDate,
+  getOneYearbeforeDay,
+  nextDay,
+  getDayOfWeek,
+} from "./utils";
 const MONTH = [
   "January",
   "February",
@@ -15,7 +20,15 @@ const MONTH = [
   "November",
   "December",
 ];
-const DAY = ["Monday", "Wednesday", "Friday"];
+const DAY = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
 const namespaceURI = "http://www.w3.org/2000/svg";
 onMounted(() => {
   let content = document.querySelector("#footprint g");
@@ -25,14 +38,15 @@ onMounted(() => {
   initSummay();
 });
 const initDay = (content: any) => {
-  for (let i = 0; i < DAY.length; i++) {
-    const day = DAY[i];
+  let startWeek = getDayOfWeek(getOneYearbeforeDay()) + 1;
+  for (let i = 1; i <= 3; i++) {
+    const day = DAY[(startWeek + (i - 1) * 2) % 7];
     let textDom: any = document.createElementNS(namespaceURI, "text");
     textDom.setAttributeNS(null, "dx", "-10");
-    // 在线多项式曲线及曲线函数拟合工具 http://tools.jb51.net/jisuanqi/create_fun
+    // 在线多项式曲线及曲线函数拟合工具
+    // http://tools.jb51.net/jisuanqi/create_fun
     // -0.5*x*x+32.5*x-7
-    let x = i + 1;
-    textDom.setAttributeNS(null, "dy", String(-0.5 * x * x + 32.5 * x - 7));
+    textDom.setAttributeNS(null, "dy", String(-0.5 * i * i + 32.5 * i - 7));
     textDom.setAttributeNS(null, "class", "ContributionCalendar-label");
     textDom.textContent = day.substring(0, 3);
     content.appendChild(textDom);
@@ -66,7 +80,7 @@ const initRect = (content: any) => {
       if (oneYearBeforeDay > new Date().getTime()) {
         break;
       }
-      let dataLevel = getDataLevel();
+      let dataLevel = "0" || getDataLevel();
       let date = formateDate(oneYearBeforeDay);
       let rectDom: any = document.createElementNS(namespaceURI, "rect");
       let attr: any = {
@@ -125,6 +139,12 @@ const initSummay = () => {
     </svg>
     <div class="summary"></div>
   </div>
+  <!-- <div class="vertical-content">
+    <svg class="vertical" id="footprint" width="828" height="128">
+      <g transform="translate(10, 20)"></g>
+    </svg>
+    <div class="summary"></div>
+  </div> -->
 </template>
 
 <style>
@@ -153,6 +173,7 @@ body {
 }
 #app {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   height: 100%;
@@ -164,6 +185,9 @@ body {
   border: 1px solid var(--color-border-default);
   text-align: center;
   width: 894px;
+}
+.vertical {
+  transform: translate(32px, 806px) rotate(270deg);
 }
 .ContributionCalendar-label {
   font-size: 9px;
