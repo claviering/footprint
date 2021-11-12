@@ -80,7 +80,7 @@ const initRect = (content: any) => {
       if (oneYearBeforeDay > new Date().getTime()) {
         break;
       }
-      let dataLevel = "0" || getDataLevel();
+      let dataLevel = getDataLevel();
       let date = formateDate(oneYearBeforeDay);
       let rectDom: any = document.createElementNS(namespaceURI, "rect");
       let attr: any = {
@@ -139,12 +139,6 @@ const initSummay = () => {
     </svg>
     <div class="summary"></div>
   </div>
-  <!-- <div class="vertical-content">
-    <svg class="vertical" id="footprint" width="828" height="128">
-      <g transform="translate(10, 20)"></g>
-    </svg>
-    <div class="summary"></div>
-  </div> -->
 </template>
 
 <style>
