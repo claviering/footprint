@@ -44,6 +44,7 @@ const initDay = (content: any) => {
     let textDom: any = document.createElementNS(namespaceURI, "text");
     textDom.setAttributeNS(null, "dx", "-10");
     // 在线多项式曲线及曲线函数拟合工具
+    // 最小二乘法
     // http://tools.jb51.net/jisuanqi/create_fun
     // -0.5*x*x+32.5*x-7
     textDom.setAttributeNS(null, "dy", String(-0.5 * i * i + 32.5 * i - 7));
@@ -91,7 +92,7 @@ const initRect = (content: any) => {
         class: "ContributionCalendar-day",
         rx: "2",
         ry: "2",
-        "data-count": "0",
+        "data-count": `${dataLevel}`,
         "data-level": `${dataLevel}`,
         "data-date": `${date}`,
       };
@@ -130,10 +131,94 @@ const initSummay = () => {
   }
   summaryDom.innerHTML += "More";
 };
+const currentTooltip = document.createElement('div')
+currentTooltip.classList.add('svg-tip', 'svg-tip-one-line')
+// Remove pointer events to prevent tooltip flickering
+currentTooltip.style.pointerEvents = 'none'
+// currentTooltip.hidden = true
+// Add the tooltip to
+document.body.appendChild(currentTooltip)
+
+function hideTooltip() {
+  if (currentTooltip) {
+    currentTooltip.hidden = true
+  }
+}
+function showTooltip(el: Element) {
+  hideTooltip()
+
+  const date = utcDate(el.getAttribute('data-date')!)
+  const count = parseInt(el.getAttribute('data-count') || '')
+
+  const formatted = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(date)
+  const label = count === 0 ? 'No' : new Intl.NumberFormat('en-US').format(count)
+
+  const strong = document.createElement('strong')
+  strong.textContent = `${label} ${count === 1 ? 'contribution' : 'contributions'}`
+
+  currentTooltip.innerHTML = ''
+  currentTooltip.append(strong, ` on ${formatted}`)
+
+  // We have to show the tooltip before calculating it's position.
+  currentTooltip.hidden = false
+
+  const bounds = el.getBoundingClientRect()
+  const x = bounds.left + window.pageXOffset - currentTooltip.offsetWidth / 2 + bounds.width / 2
+  const y = bounds.bottom + window.pageYOffset - currentTooltip.offsetHeight - bounds.height * 2
+  const graphContainer = document.querySelector('.content')
+  const graphContainerBounds = graphContainer!.getBoundingClientRect()
+  currentTooltip.style.top = `${y}px`
+
+  if (isTooFarLeft(graphContainerBounds, x)) {
+    currentTooltip.style.left = `${southwestTooltip(bounds)}px`
+    currentTooltip.classList.add('left')
+    currentTooltip.classList.remove('right')
+  } else if (isTooFarRight(graphContainerBounds, x)) {
+    currentTooltip.style.left = `${southeastTooltip(bounds)}px`
+    currentTooltip.classList.add('right')
+    currentTooltip.classList.remove('left')
+  } else {
+    currentTooltip.style.left = `${x}px`
+    currentTooltip.classList.remove('left')
+    currentTooltip.classList.remove('right')
+  }
+}
+function isTooFarLeft(graphContainerBounds: DOMRect, tooltipX: number) {
+  return graphContainerBounds.x > tooltipX
+}
+
+function isTooFarRight(graphContainerBounds: DOMRect, tooltipX: number) {
+  return graphContainerBounds.x + graphContainerBounds.width < tooltipX + currentTooltip.offsetWidth
+}
+
+function southwestTooltip(bounds: DOMRect) {
+  return bounds.left + window.pageXOffset - currentTooltip.offsetWidth * 0.1 + bounds.width / 2
+}
+
+function southeastTooltip(bounds: DOMRect) {
+  return bounds.left + window.pageXOffset - currentTooltip.offsetWidth * 0.9 + bounds.width / 2
+}
+// Parse date in ISO 8601 format: 2015-10-20. Avoids cross-browser time zone
+// problems interpreting the intent, local vs utc, of `new Date('2015-10-20')`.
+function utcDate(iso: string): Date {
+  const [year, month, date] = iso.split('-').map(x => parseInt(x, 10))
+  return new Date(Date.UTC(year, month - 1, date))
+}
+const mouseover = (event: Event) => {
+  const target = event.target as Element;
+  if (target.matches('rect[data-count]')) {
+      showTooltip(target)
+    }
+}
 </script>
 
 <template>
-  <div class="content">
+  <div class="content" @mouseover="mouseover" @mouseout="hideTooltip">
     <svg id="footprint" width="828" height="128">
       <g transform="translate(10, 20)"></g>
     </svg>
@@ -156,6 +241,8 @@ const initSummay = () => {
   --color-calendar-graph-day-L3-border: rgba(27, 31, 35, 0.06);
   --color-calendar-graph-day-L4-bg: #216e39;
   --color-calendar-graph-day-L4-border: rgba(27, 31, 35, 0.06);
+  --color-neutral-emphasis-plus: #24292f;
+  --color-fg-on-emphasis: #ffffff;
 }
 html,
 body {
@@ -220,5 +307,37 @@ body {
   width: 803px;
   text-align: right;
   margin: auto;
+}
+.svg-tip {
+    position: absolute;
+    z-index: 99999;
+    padding: 8px 16px;
+    font-size: 12px;
+    color: var(--color-fg-on-emphasis);
+    text-align: center;
+    background: var(--color-neutral-emphasis-plus);
+    border-radius: 6px
+}
+.svg-tip.left::after {
+    left: 10%
+}
+
+.svg-tip.right::after {
+    left: 90%
+}
+.svg-tip::after {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    box-sizing: border-box;
+    margin: 0 0 0 -5px;
+    content: " ";
+    border: 5px solid transparent;
+    border-top-color: var(--color-neutral-emphasis-plus)
+}
+.svg-tip-one-line {
+    white-space: nowrap
 }
 </style>
